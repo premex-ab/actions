@@ -9,6 +9,12 @@ dist/
 build/
 *.log
 
+# Gradle build artifacts
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
 # OS generated files
 .DS_Store
 .DS_Store?
