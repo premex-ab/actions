@@ -1,5 +1,7 @@
+---
 name: 'Update Gradle Wrapper'
-description: 'Recursively finds and updates Gradle wrappers to the latest version'
+description: >
+  Recursively finds and updates Gradle wrappers to the latest version
 author: 'premex-ab'
 
 branding:
@@ -29,6 +31,7 @@ runs:
       run: |
         # Make the script executable
         chmod +x "${{ github.action_path }}/update-gradle-wrapper.sh"
-        
+
         # Run the update script
-        "${{ github.action_path }}/update-gradle-wrapper.sh" "${{ inputs.gradle-version }}"
+        "${{ github.action_path }}/update-gradle-wrapper.sh" \
+          "${{ inputs.gradle-version }}"

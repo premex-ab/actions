@@ -24,10 +24,10 @@ for gradlew_path in "${GRADLEW_PATHS[@]}"; do
     echo "  - $wrapper_dir"
 done
 
-if [ $FOUND_COUNT -eq 0 ]; then
+if [ "$FOUND_COUNT" -eq 0 ]; then
     echo "ℹ️  No Gradle wrappers found in the repository."
-    echo "found-count=0" >> $GITHUB_OUTPUT
-    echo "updated-count=0" >> $GITHUB_OUTPUT
+    echo "found-count=0" >> "$GITHUB_OUTPUT"
+    echo "updated-count=0" >> "$GITHUB_OUTPUT"
     exit 0
 fi
 
@@ -59,7 +59,7 @@ for gradlew_path in "${GRADLEW_PATHS[@]}"; do
         fi
         
         # Return to the original directory
-        cd "$ORIGINAL_DIR"
+        cd "$ORIGINAL_DIR" || exit
     else
         echo "❌ Failed to change to directory $wrapper_abs_dir"
         FAILED_PATHS+=("$wrapper_abs_dir")
@@ -83,11 +83,11 @@ if [ ${#FAILED_PATHS[@]} -gt 0 ]; then
 fi
 
 # Set outputs for GitHub Actions
-echo "found-count=$FOUND_COUNT" >> $GITHUB_OUTPUT
-echo "updated-count=$UPDATED_COUNT" >> $GITHUB_OUTPUT
+echo "found-count=$FOUND_COUNT" >> "$GITHUB_OUTPUT"
+echo "updated-count=$UPDATED_COUNT" >> "$GITHUB_OUTPUT"
 
 # Exit with error if any updates failed
-if [ $UPDATED_COUNT -lt $FOUND_COUNT ]; then
+if [ "$UPDATED_COUNT" -lt "$FOUND_COUNT" ]; then
     echo ""
     echo "⚠️  Some Gradle wrapper updates failed. Please check the logs above."
     exit 1
