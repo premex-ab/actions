@@ -1,0 +1,19 @@
+---
+name: 'Shell Hello World'
+description: 'A simple shell-based hello world action'
+inputs:
+  who-to-greet:
+    description: 'Who to greet'
+    required: true
+    default: 'World'
+outputs:
+  greeting:
+    description: 'The greeting message'
+runs:
+  using: 'composite'
+  steps:
+    - name: Greet someone
+      run: |
+        echo "Hello ${{ inputs.who-to-greet }}!"
+        echo "greeting=Hello ${{ inputs.who-to-greet }}!" >> $GITHUB_OUTPUT
+      shell: bash

@@ -1,0 +1,25 @@
+---
+name: Test Simple Shell Action
+
+'on':
+  push:
+    branches: [main, copilot/fix-3]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-shell-action:
+    runs-on: ubuntu-latest
+    name: Test shell action
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test shell action
+        uses: ./shell-hello
+        with:
+          who-to-greet: 'GitHub Actions'
+        id: hello
+
+      - name: Get the output
+        run: echo "Output was ${{ steps.hello.outputs.greeting }}"
