@@ -1,0 +1,34 @@
+name: 'Update Gradle Wrapper'
+description: 'Recursively finds and updates Gradle wrappers to the latest version'
+author: 'premex-ab'
+
+branding:
+  icon: 'arrow-up-circle'
+  color: 'green'
+
+inputs:
+  gradle-version:
+    description: 'The Gradle version to update to (default: latest)'
+    required: false
+    default: 'latest'
+
+outputs:
+  updated-count:
+    description: 'Number of Gradle wrappers successfully updated'
+    value: ${{ steps.update-wrapper.outputs.updated-count }}
+  found-count:
+    description: 'Number of Gradle wrappers found'
+    value: ${{ steps.update-wrapper.outputs.found-count }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Update Gradle Wrappers
+      id: update-wrapper
+      shell: bash
+      run: |
+        # Make the script executable
+        chmod +x "${{ github.action_path }}/update-gradle-wrapper.sh"
+        
+        # Run the update script
+        "${{ github.action_path }}/update-gradle-wrapper.sh" "${{ inputs.gradle-version }}"
