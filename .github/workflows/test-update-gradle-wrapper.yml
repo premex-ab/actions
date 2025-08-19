@@ -1,0 +1,74 @@
+---
+name: Test Update Gradle Wrapper Action
+
+'on':
+  workflow_dispatch:
+    inputs:
+      gradle-version:
+        description: 'Gradle version to update to (default: latest)'
+        required: false
+        default: 'latest'
+        type: string
+
+jobs:
+  test-update-gradle-wrapper:
+    runs-on: ubuntu-latest
+    name: Test update gradle wrapper action
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Display current Gradle wrapper versions
+        run: |
+          echo "Current Gradle wrapper versions:"
+          for dir in test-gradle-project-*; do
+            if [ -d "$dir" ] && \
+               [ -f "$dir/gradle/wrapper/gradle-wrapper.properties" ]; then
+              echo "=== $dir ==="
+              cat "$dir/gradle/wrapper/gradle-wrapper.properties" | \
+                grep distributionUrl
+            fi
+          done
+
+      - name: Update Gradle wrappers
+        uses: ./update-gradle-wrapper
+        with:
+          gradle-version: ${{ github.event.inputs.gradle-version }}
+        id: update
+
+      - name: Display results
+        run: |
+          echo "Update Results:"
+          echo "  - Found: ${{ steps.update.outputs.found-count }} wrapper(s)"
+          echo "  - Updated: \
+            ${{ steps.update.outputs.updated-count }} wrapper(s)"
+
+      - name: Display updated Gradle wrapper versions
+        run: |
+          echo "Updated Gradle wrapper versions:"
+          for dir in test-gradle-project-*; do
+            if [ -d "$dir" ] && \
+               [ -f "$dir/gradle/wrapper/gradle-wrapper.properties" ]; then
+              echo "=== $dir ==="
+              cat "$dir/gradle/wrapper/gradle-wrapper.properties" | \
+                grep distributionUrl
+            fi
+          done
+
+      - name: Verify wrappers work
+        run: |
+          echo "Testing that updated wrappers work:"
+          for dir in test-gradle-project-*; do
+            if [ -d "$dir" ] && [ -f "$dir/gradlew" ]; then
+              echo "=== Testing $dir ==="
+              cd "$dir"
+              ./gradlew --version
+              cd ..
+            fi
+          done
