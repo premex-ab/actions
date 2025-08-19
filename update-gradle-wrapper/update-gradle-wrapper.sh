@@ -6,6 +6,20 @@ set -uo pipefail
 # Get the Gradle version from input (default to 'latest')
 GRADLE_VERSION="${1:-latest}"
 
+# Resolve 'latest' to actual latest version
+if [ "$GRADLE_VERSION" = "latest" ]; then
+    echo "🔄 Resolving 'latest' Gradle version..."
+    # Get the latest version from Gradle releases API
+    LATEST_VERSION=$(curl -s https://api.github.com/repos/gradle/gradle/releases/latest | grep '"tag_name"' | cut -d '"' -f 4 | sed 's/^v//')
+    if [ -n "$LATEST_VERSION" ]; then
+        GRADLE_VERSION="$LATEST_VERSION"
+        echo "✅ Resolved 'latest' to version: $GRADLE_VERSION"
+    else
+        echo "⚠️  Failed to resolve 'latest' version, using 8.5 as fallback"
+        GRADLE_VERSION="8.5"
+    fi
+fi
+
 echo "🔍 Searching for Gradle wrapper files (gradlew)..."
 
 # Find all gradlew files recursively, excluding .git directories
