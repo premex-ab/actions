@@ -1,0 +1,56 @@
+---
+name: Release Management
+
+'on':
+  release:
+    types: [created]
+
+jobs:
+  update-major-version-tag:
+    runs-on: ubuntu-latest
+    name: Update major version tag
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract major version and update tag
+        run: |
+          # Get the release tag name
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          echo "Release tag: $RELEASE_TAG"
+
+          # Extract major version (e.g., v1.2.3 -> v1)
+          if [[ $RELEASE_TAG =~ ^v([0-9]+)\.[0-9]+\.[0-9]+$ ]]; then
+            MAJOR_VERSION="v${BASH_REMATCH[1]}"
+            echo "Major version: $MAJOR_VERSION"
+
+            # Configure git
+            git config user.name "github-actions[bot]"
+            git config user.email \
+              "github-actions[bot]@users.noreply.github.com"
+
+            # Get the commit SHA of the release
+            RELEASE_SHA=$(git rev-parse $RELEASE_TAG)
+            echo "Release SHA: $RELEASE_SHA"
+
+            # Create or update the major version tag
+            if git rev-parse --verify --quiet "$MAJOR_VERSION"; then
+              echo "Updating existing tag $MAJOR_VERSION"
+              git tag -f "$MAJOR_VERSION" "$RELEASE_SHA"
+            else
+              echo "Creating new tag $MAJOR_VERSION"
+              git tag "$MAJOR_VERSION" "$RELEASE_SHA"
+            fi
+
+            # Push the tag
+            git push origin "$MAJOR_VERSION" --force
+
+            echo "✅ Successfully updated $MAJOR_VERSION to point to \
+              $RELEASE_TAG ($RELEASE_SHA)"
+          else
+            echo "❌ Release tag '$RELEASE_TAG' does not match \
+              expected format (v1.2.3)"
+            exit 1
+          fi
