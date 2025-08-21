@@ -99,21 +99,23 @@ if [ ${#FAILED_PATHS[@]} -gt 0 ]; then
 fi
 
 # Set outputs for GitHub Actions
-echo "found-count=$FOUND_COUNT" >> "$GITHUB_OUTPUT"
-echo "updated-count=$UPDATED_COUNT" >> "$GITHUB_OUTPUT"
-
-# Output paths as newline-separated strings
-if [ ${#UPDATED_PATHS[@]} -gt 0 ]; then
-    printf "updated-paths=%s\n" "$(IFS=$'\n'; echo "${UPDATED_PATHS[*]}")" >> "$GITHUB_OUTPUT"
-else
-    echo "updated-paths=" >> "$GITHUB_OUTPUT"
-fi
-
-if [ ${#FAILED_PATHS[@]} -gt 0 ]; then
-    printf "failed-paths=%s\n" "$(IFS=$'\n'; echo "${FAILED_PATHS[*]}")" >> "$GITHUB_OUTPUT"
-else
-    echo "failed-paths=" >> "$GITHUB_OUTPUT"
-fi
+{
+    echo "found-count=$FOUND_COUNT"
+    echo "updated-count=$UPDATED_COUNT"
+    
+    # Output paths as newline-separated strings using proper multiline format
+    echo "updated-paths<<EOF"
+    if [ ${#UPDATED_PATHS[@]} -gt 0 ]; then
+        printf "%s\n" "${UPDATED_PATHS[@]}"
+    fi
+    echo "EOF"
+    
+    echo "failed-paths<<EOF"
+    if [ ${#FAILED_PATHS[@]} -gt 0 ]; then
+        printf "%s\n" "${FAILED_PATHS[@]}"
+    fi
+    echo "EOF"
+} >> "$GITHUB_OUTPUT"
 
 # Exit with error if any updates failed
 if [ "$UPDATED_COUNT" -lt "$FOUND_COUNT" ]; then
