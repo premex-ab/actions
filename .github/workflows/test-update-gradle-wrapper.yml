@@ -49,6 +49,32 @@ jobs:
           echo "  - Updated: \
             ${{ steps.update.outputs.updated-count }} wrapper(s)"
 
+          # Display results with emojis
+          echo ""
+          echo "📋 Detailed Results:"
+
+          # Process updated paths
+          if [ -n "${{ steps.update.outputs.updated-paths }}" ]; then
+            echo "✅ Successfully updated wrappers:"
+            echo "${{ steps.update.outputs.updated-paths }}" | \
+              while IFS= read -r path; do
+                if [ -n "$path" ]; then
+                  echo "  ✅ $path"
+                fi
+              done
+          fi
+
+          # Process failed paths
+          if [ -n "${{ steps.update.outputs.failed-paths }}" ]; then
+            echo "❌ Failed to update wrappers:"
+            echo "${{ steps.update.outputs.failed-paths }}" | \
+              while IFS= read -r path; do
+                if [ -n "$path" ]; then
+                  echo "  ❌ $path"
+                fi
+              done
+          fi
+
       - name: Display updated Gradle wrapper versions
         run: |
           echo "Updated Gradle wrapper versions:"

@@ -45,6 +45,8 @@ jobs:
 |--------|-------------|
 | `found-count` | Number of Gradle wrappers found in the repository |
 | `updated-count` | Number of Gradle wrappers successfully updated |
+| `updated-paths` | Paths of Gradle wrappers that were successfully updated (newline-separated) |
+| `failed-paths` | Paths of Gradle wrappers that failed to update (newline-separated) |
 
 ## What it does
 
