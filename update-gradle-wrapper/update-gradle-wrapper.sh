@@ -31,6 +31,7 @@ done < <(find . -name "gradlew" -type f -not -path "*/.git/*" -print0)
 FOUND_COUNT=${#GRADLEW_PATHS[@]}
 UPDATED_COUNT=0
 FAILED_PATHS=()
+UPDATED_PATHS=()
 
 echo "📦 Found $FOUND_COUNT Gradle wrapper(s):"
 for gradlew_path in "${GRADLEW_PATHS[@]}"; do
@@ -67,6 +68,7 @@ for gradlew_path in "${GRADLEW_PATHS[@]}"; do
         if ./gradlew wrapper --gradle-version "$GRADLE_VERSION"; then
             echo "✅ Successfully updated wrapper in $wrapper_abs_dir"
             ((UPDATED_COUNT++))
+            UPDATED_PATHS+=("$wrapper_abs_dir")
         else
             echo "❌ Failed to update wrapper in $wrapper_abs_dir"
             FAILED_PATHS+=("$wrapper_abs_dir")
@@ -99,6 +101,19 @@ fi
 # Set outputs for GitHub Actions
 echo "found-count=$FOUND_COUNT" >> "$GITHUB_OUTPUT"
 echo "updated-count=$UPDATED_COUNT" >> "$GITHUB_OUTPUT"
+
+# Output paths as newline-separated strings
+if [ ${#UPDATED_PATHS[@]} -gt 0 ]; then
+    printf "updated-paths=%s\n" "$(IFS=$'\n'; echo "${UPDATED_PATHS[*]}")" >> "$GITHUB_OUTPUT"
+else
+    echo "updated-paths=" >> "$GITHUB_OUTPUT"
+fi
+
+if [ ${#FAILED_PATHS[@]} -gt 0 ]; then
+    printf "failed-paths=%s\n" "$(IFS=$'\n'; echo "${FAILED_PATHS[*]}")" >> "$GITHUB_OUTPUT"
+else
+    echo "failed-paths=" >> "$GITHUB_OUTPUT"
+fi
 
 # Exit with error if any updates failed
 if [ "$UPDATED_COUNT" -lt "$FOUND_COUNT" ]; then

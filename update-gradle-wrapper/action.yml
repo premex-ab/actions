@@ -21,6 +21,15 @@ outputs:
   found-count:
     description: 'Number of Gradle wrappers found'
     value: ${{ steps.update-wrapper.outputs.found-count }}
+  updated-paths:
+    description: >
+      Paths of Gradle wrappers that were successfully updated
+      (newline-separated)
+    value: ${{ steps.update-wrapper.outputs.updated-paths }}
+  failed-paths:
+    description: >
+      Paths of Gradle wrappers that failed to update (newline-separated)
+    value: ${{ steps.update-wrapper.outputs.failed-paths }}
 
 runs:
   using: 'composite'
