@@ -33,11 +33,41 @@ jobs:
     gradle-version: '8.5'
 ```
 
+### Automated Pull Request
+
+You can configure the action to automatically create a Pull Request when updates are found. This is useful for keeping your repository up-to-date without manual intervention.
+
+```yaml
+- uses: actions/create-github-app-token@v2
+  id: generate-token
+  with:
+    app-id: ${{ secrets.APP_ID }}
+    private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+- name: Update Gradle wrappers
+  uses: premex-ab/actions/update-gradle-wrapper@v1
+  with:
+    create-pr: true
+    token: ${{ steps.generate-token.outputs.token }}
+```
+
+**Note:** By default, the action uses `GITHUB_TOKEN` to create the PR. However, PRs created with `GITHUB_TOKEN` will not trigger other workflows (like CI checks). To ensure CI runs on the created PR, it is recommended to use a GitHub App token (as shown above) or a Personal Access Token (PAT).
+
 ## Inputs
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `gradle-version` | The Gradle version to update to | No | `latest` |
+| `create-pr` | Whether to create a Pull Request with the changes | No | `false` |
+| `token` | GitHub Token to use for PR creation. Use a GitHub App token or PAT to trigger CI workflows. | No | `github.token` |
+| `pr-title` | Title of the Pull Request | No | `🔄 Update Gradle Wrapper` |
+| `pr-branch` | Branch name for the Pull Request | No | `update-gradle-wrapper` |
+| `pr-commit-message` | Commit message for the Pull Request | No | `chore: update Gradle wrapper to latest version` |
+| `pr-reviewers` | Comma-separated list of reviewers | No | |
+| `pr-assignees` | Comma-separated list of assignees | No | |
+| `pr-labels` | Comma-separated list of labels | No | |
+| `pr-draft` | Create the Pull Request as a draft | No | `false` |
+| `pr-delete-branch` | Delete the branch when the Pull Request is merged | No | `true` |
 
 ## Outputs
 
