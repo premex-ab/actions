@@ -64,8 +64,11 @@ for gradlew_path in "${GRADLEW_PATHS[@]}"; do
         # Make gradlew executable if it isn't already
         chmod +x "./gradlew"
         
-        # Update the wrapper
-        if ./gradlew wrapper --gradle-version "$GRADLE_VERSION"; then
+        # Update the wrapper (run twice to ensure all files are updated)
+        # First run: Updates gradle-wrapper.properties
+        # Second run: Uses new version to regenerate jar and scripts
+        if ./gradlew wrapper --gradle-version "$GRADLE_VERSION" && \
+           ./gradlew wrapper --gradle-version "$GRADLE_VERSION"; then
             echo "✅ Successfully updated wrapper in $wrapper_abs_dir"
             ((UPDATED_COUNT++))
             UPDATED_PATHS+=("$wrapper_abs_dir")
