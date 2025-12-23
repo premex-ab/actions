@@ -29,6 +29,9 @@ outputs:
   found-count:
     description: 'Number of Gradle wrappers found'
     value: ${{ steps.update-wrapper.outputs.found-count }}
+  gradle-version:
+    description: 'The actual Gradle version used (resolved from latest if applicable)'
+    value: ${{ steps.update-wrapper.outputs.gradle-version }}
   updated-paths:
     description: >
       Paths of Gradle wrappers that were successfully updated
@@ -58,12 +61,12 @@ runs:
       uses: peter-evans/create-pull-request@v8
       with:
         token: ${{ inputs.token }}
-        commit-message: 'chore: bump Gradle Wrapper to ${{ inputs.gradle-version }}'
+        commit-message: 'chore: bump Gradle Wrapper to ${{ steps.update-wrapper.outputs.gradle-version }}'
         committer: 'premex-bot <noreply@premex.se>'
         author: 'premex-bot <noreply@premex.se>'
-        title: 'chore: bump Gradle Wrapper to ${{ inputs.gradle-version }}'
+        title: 'chore: bump Gradle Wrapper to ${{ steps.update-wrapper.outputs.gradle-version }}'
         body: |
-          Bumps Gradle Wrapper to ${{ inputs.gradle-version }}.
+          Bumps Gradle Wrapper to ${{ steps.update-wrapper.outputs.gradle-version }}.
           
           Updated ${{ steps.update-wrapper.outputs.updated-count }} Gradle wrapper(s) in this repository.
           
@@ -75,6 +78,6 @@ runs:
           - Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           - Triggered by: @${{ github.actor }}
           </details>
-        branch: 'premex/gradle-wrapper-${{ inputs.gradle-version }}'
+        branch: 'premex/gradle-wrapper-${{ steps.update-wrapper.outputs.gradle-version }}'
         delete-branch: true
         labels: 'dependencies,gradle'

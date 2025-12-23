@@ -105,7 +105,8 @@ fi
 {
     echo "found-count=$FOUND_COUNT"
     echo "updated-count=$UPDATED_COUNT"
-    
+    echo "gradle-version=$GRADLE_VERSION"
+
     # Output paths as newline-separated strings using proper multiline format
     echo "updated-paths<<EOF"
     if [ ${#UPDATED_PATHS[@]} -gt 0 ]; then
