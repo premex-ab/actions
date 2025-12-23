@@ -1,14 +1,8 @@
 ---
 name: Test Update Gradle Wrapper Action
 
-'on':
+on:
   workflow_dispatch:
-    inputs:
-      gradle-version:
-        description: 'Gradle version to update to (default: latest)'
-        required: false
-        default: 'latest'
-        type: string
 
 jobs:
   test-update-gradle-wrapper:
@@ -36,10 +30,18 @@ jobs:
             fi
           done
 
+      - uses: actions/create-github-app-token@v2
+        id: generate-token
+        with:
+          app-id: ${{ secrets.PREMEX_POT_APP_ID }}
+          private-key: ${{ secrets.PREMEX_POT_APP_SECRET }}
+
       - name: Update Gradle wrappers
         uses: ./update-gradle-wrapper
         with:
-          gradle-version: ${{ github.event.inputs.gradle-version }}
+          gradle-version: latest
+          create-pr: true
+          token: ${{ steps.generate-token.outputs.token }}
         id: update
 
       - name: Display results
