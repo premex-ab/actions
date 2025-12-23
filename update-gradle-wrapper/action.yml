@@ -13,6 +13,14 @@ inputs:
     description: 'The Gradle version to update to (default: latest)'
     required: false
     default: 'latest'
+  create-pr:
+    description: 'Whether to create a Pull Request with the changes. If false, changes are left uncommitted for manual handling.'
+    required: false
+    default: 'false'
+  token:
+    description: 'GitHub Token to use for PR creation. Use a GitHub App token or PAT to trigger CI workflows.'
+    required: false
+    default: ${{ github.token }}
 
 outputs:
   updated-count:
@@ -21,6 +29,9 @@ outputs:
   found-count:
     description: 'Number of Gradle wrappers found'
     value: ${{ steps.update-wrapper.outputs.found-count }}
+  gradle-version:
+    description: 'The actual Gradle version used (resolved from latest if applicable)'
+    value: ${{ steps.update-wrapper.outputs.gradle-version }}
   updated-paths:
     description: >
       Paths of Gradle wrappers that were successfully updated
@@ -44,3 +55,29 @@ runs:
         # Run the update script
         "${{ github.action_path }}/update-gradle-wrapper.sh" \
           "${{ inputs.gradle-version }}"
+
+    - name: Create Pull Request
+      if: inputs.create-pr == 'true' && steps.update-wrapper.outputs.updated-count != '0'
+      uses: peter-evans/create-pull-request@v8
+      with:
+        token: ${{ inputs.token }}
+        commit-message: 'chore: bump Gradle Wrapper to ${{ steps.update-wrapper.outputs.gradle-version }}'
+        committer: 'premex-bot <noreply@premex.se>'
+        author: 'premex-bot <noreply@premex.se>'
+        title: 'chore: bump Gradle Wrapper to ${{ steps.update-wrapper.outputs.gradle-version }}'
+        body: |
+          Bumps Gradle Wrapper to ${{ steps.update-wrapper.outputs.gradle-version }}.
+          
+          Updated ${{ steps.update-wrapper.outputs.updated-count }} Gradle wrapper(s) in this repository.
+          
+          ---
+          
+          <details>
+          <summary>Automation details</summary>
+          
+          - Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          - Triggered by: @${{ github.actor }}
+          </details>
+        branch: 'premex/gradle-wrapper-${{ steps.update-wrapper.outputs.gradle-version }}'
+        delete-branch: true
+        labels: 'dependencies,gradle'
