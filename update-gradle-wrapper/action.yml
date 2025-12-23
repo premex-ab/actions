@@ -13,6 +13,63 @@ inputs:
     description: 'The Gradle version to update to (default: latest)'
     required: false
     default: 'latest'
+  token:
+    description: 'GitHub Token to use for PR creation. Use a GitHub App token or PAT to trigger CI workflows.'
+    required: false
+    default: ${{ github.token }}
+  create-pr:
+    description: 'Whether to create a Pull Request with the changes'
+    required: false
+    default: 'false'
+  pr-title:
+    description: 'Title of the Pull Request'
+    required: false
+    default: '🔄 Update Gradle Wrapper'
+  pr-body:
+    description: 'Body of the Pull Request'
+    required: false
+    default: |
+      ## 🎯 Automated Gradle Wrapper Update
+      
+      This PR updates the Gradle wrapper to the latest version.
+      
+      ### 🤖 Automation Details
+      - Triggered by: Update Gradle Wrapper Action
+      - Generated: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      - Branch: `update-gradle-wrapper`
+      
+      ### ✅ What to do next
+      1. Review the changes in the wrapper files
+      2. Verify that the CI builds pass
+      3. Merge this PR to complete the update
+      
+      ---
+      *This PR was automatically created by the Update Gradle Wrapper workflow.*
+  pr-branch:
+    description: 'Branch name for the Pull Request'
+    required: false
+    default: 'update-gradle-wrapper'
+  pr-commit-message:
+    description: 'Commit message for the Pull Request'
+    required: false
+    default: 'chore: update Gradle wrapper to latest version'
+  pr-reviewers:
+    description: 'Comma-separated list of reviewers'
+    required: false
+  pr-assignees:
+    description: 'Comma-separated list of assignees'
+    required: false
+  pr-labels:
+    description: 'Comma-separated list of labels'
+    required: false
+  pr-draft:
+    description: 'Create the Pull Request as a draft'
+    required: false
+    default: 'false'
+  pr-delete-branch:
+    description: 'Delete the branch when the Pull Request is merged'
+    required: false
+    default: 'true'
 
 outputs:
   updated-count:
@@ -44,3 +101,18 @@ runs:
         # Run the update script
         "${{ github.action_path }}/update-gradle-wrapper.sh" \
           "${{ inputs.gradle-version }}"
+
+    - name: Create Pull Request
+      if: inputs.create-pr == 'true' && steps.update-wrapper.outputs.updated-count != '0'
+      uses: peter-evans/create-pull-request@v8
+      with:
+        token: ${{ inputs.token }}
+        commit-message: ${{ inputs.pr-commit-message }}
+        title: ${{ inputs.pr-title }}
+        body: ${{ inputs.pr-body }}
+        branch: ${{ inputs.pr-branch }}
+        delete-branch: ${{ inputs.pr-delete-branch }}
+        reviewers: ${{ inputs.pr-reviewers }}
+        assignees: ${{ inputs.pr-assignees }}
+        labels: ${{ inputs.pr-labels }}
+        draft: ${{ inputs.pr-draft }}
