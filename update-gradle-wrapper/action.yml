@@ -56,8 +56,26 @@ runs:
         "${{ github.action_path }}/update-gradle-wrapper.sh" \
           "${{ inputs.gradle-version }}"
 
+    - name: Check current branch
+      id: check-branch
+      shell: bash
+      run: |
+        CURRENT_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+        TARGET_BRANCH="premex/gradle-wrapper-${{ steps.update-wrapper.outputs.gradle-version }}"
+        
+        echo "current-branch=$CURRENT_BRANCH" >> "$GITHUB_OUTPUT"
+        echo "target-branch=$TARGET_BRANCH" >> "$GITHUB_OUTPUT"
+        
+        if [ "$CURRENT_BRANCH" = "$TARGET_BRANCH" ]; then
+          echo "skip-pr=true" >> "$GITHUB_OUTPUT"
+          echo "⚠️  Already on target branch '$TARGET_BRANCH', skipping PR creation"
+        else
+          echo "skip-pr=false" >> "$GITHUB_OUTPUT"
+          echo "✅ Will create PR from current branch to '$TARGET_BRANCH'"
+        fi
+
     - name: Create Pull Request
-      if: inputs.create-pr == 'true' && steps.update-wrapper.outputs.updated-count != '0'
+      if: inputs.create-pr == 'true' && steps.update-wrapper.outputs.updated-count != '0' && steps.check-branch.outputs.skip-pr == 'false'
       uses: peter-evans/create-pull-request@v8
       with:
         token: ${{ inputs.token }}
