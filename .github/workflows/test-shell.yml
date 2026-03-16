@@ -23,3 +23,13 @@ jobs:
 
       - name: Get the output
         run: echo "Output was ${{ steps.hello.outputs.greeting }}"
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - test-shell-action
+    steps:
+      - name: Check results
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
