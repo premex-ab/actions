@@ -1,19 +1,28 @@
 ---
 name: Publish Release
 
-# Publishes a release from main without the GitHub UI, and moves the major
-# version tag. A release created with GITHUB_TOKEN does not trigger
-# release.yml, so the major tag is moved here as well.
+# Every merge to main that changes an action publishes a release and moves the
+# major version tag. .github/release/next-version.sh picks the version: patch
+# for a change, minor for a new action; a 'minor' or 'major' label on a merged
+# PR raises it. Run it by hand to publish a specific version.
+#
+# Tags and releases made with GITHUB_TOKEN trigger no workflows, so this never
+# re-runs itself and release.yml (for releases made in the UI) is not needed
+# for these.
 'on':
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release, for example v1.2.0'
-        required: true
+        description: >-
+          Version to release, for example v1.2.0. Leave empty to work it out.
+        required: false
         type: string
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: publish-release
@@ -22,39 +31,67 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    name: Publish ${{ inputs.version }}
+    name: Publish release
     if: github.ref == 'refs/heads/main'
     env:
-      VERSION: ${{ inputs.version }}
       GH_TOKEN: ${{ github.token }}
+      REQUESTED: ${{ inputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Validate version
+      - name: Work out the version
+        id: version
         run: |
-          if [[ ! "$VERSION" =~ ^v([0-9]+)\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::'$VERSION' is not a version like v1.2.3"
+          last="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname \
+            | head -n 1)"
+          echo "last=$last" >> "$GITHUB_OUTPUT"
+          labels=""
+          if [[ -n "$last" ]]; then
+            for sha in $(git log --format=%H "$last..HEAD"); do
+              labels+="$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha/pulls" \
+                --jq '.[].labels[].name')"$'\n'
+            done
+          fi
+          if [[ -n "$REQUESTED" ]]; then
+            version="$REQUESTED"
+          else
+            version="$(LABELS="$labels" .github/release/next-version.sh)"
+          fi
+          if [[ -z "$version" ]]; then
+            echo "Nothing to release since $last."
+            exit 0
+          fi
+          if [[ ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$version' is not a version like v1.2.3"
             exit 1
           fi
-          tag="refs/tags/$VERSION"
-          if git rev-parse --verify --quiet "$tag" > /dev/null; then
-            echo "::error::$VERSION already exists"
+          if git rev-parse --verify --quiet "refs/tags/$version" > /dev/null
+          then
+            echo "::error::$version already exists"
             exit 1
           fi
-          echo "MAJOR=${VERSION%%.*}" >> "$GITHUB_ENV"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Create the release
+        if: steps.version.outputs.version != ''
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          LAST: ${{ steps.version.outputs.last }}
         run: |
           gh release create "$VERSION" --target "$GITHUB_SHA" \
-            --title "$VERSION" --generate-notes
+            --title "$VERSION" --generate-notes \
+            ${LAST:+--notes-start-tag "$LAST"}
 
       - name: Move the major version tag
+        if: steps.version.outputs.version != ''
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
+          major="${VERSION%%.*}"
           git fetch --tags --force
-          git tag -f "$MAJOR" "$VERSION^{commit}"
-          git push origin "refs/tags/$MAJOR" --force
-          sha="$(git rev-parse "$VERSION^{commit}")"
-          echo "$MAJOR now points to $VERSION ($sha)"
+          git tag -f "$major" "$VERSION^{commit}"
+          git push origin "refs/tags/$major" --force
+          echo "$major now points to $VERSION ($(git rev-parse "$major"))"
