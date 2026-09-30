@@ -101,5 +101,15 @@ python3 "$repo/.github/s3-test/tamper.py" "$S3_PREFIX/spaces.tar.gz.sha256"
 expect fail "archive and .sha256 out of step" down spaces "$work/pair"
 grep -q "failed halfway" <<< "$out" && pass "out-of-step pair says why" || fail "out-of-step pair says why: $out"
 
+# immutable: a second upload under the same key is refused; without it, it overwrites.
+mkdir -p "$work/imm"; echo one > "$work/imm/f"
+expect ok "immutable first upload" upx "$work/imm" S3_IMMUTABLE=true S3_NAME=immutable S3_PATH=f
+echo two > "$work/imm/f"
+expect fail "immutable second upload is refused" upx "$work/imm" S3_IMMUTABLE=true S3_NAME=immutable S3_PATH=f
+grep -q "PreconditionFailed" <<< "$out" && pass "refusal names the precondition" || fail "refusal names the precondition: $out"
+expect ok "download still gets the first upload" down immutable "$work/imm-out"
+[[ "$(cat "$work/imm-out/f")" == one ]] && pass "first upload kept" || fail "first upload kept: $(cat "$work/imm-out/f")"
+expect ok "non-immutable upload overwrites" upx "$work/imm" S3_NAME=immutable S3_PATH=f
+
 echo "$failures failure(s)"
 exit $((failures > 0))

@@ -84,9 +84,10 @@ s3_curl() { # method key [curl args...]
     -X "$method" "$@" "$S3_ENDPOINT/$S3_BUCKET/$key"
 }
 
-s3_put() { # file key
-  s3_curl PUT "$2" --upload-file "$1" --output "$S3_WORK/response" \
-    || { s3_explain "$S3_WORK/response" "Uploading s3://$S3_BUCKET/$2"; return 1; }
+s3_put() { # file key [curl args...]
+  local file="$1" key="$2"; shift 2
+  s3_curl PUT "$key" --upload-file "$file" --output "$S3_WORK/response" "$@" \
+    || { s3_explain "$S3_WORK/response" "Uploading s3://$S3_BUCKET/$key"; return 1; }
 }
 
 s3_get() { # key file
