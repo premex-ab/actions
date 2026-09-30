@@ -45,6 +45,14 @@ jobs:
                   time.sleep(1)'
           python .github/s3-test/setup_s3.py
 
+      # Every review finding, run with Apple's /bin/bash 3.2 on macOS.
+      - name: Edge cases
+        env:
+          S3_TEST_KEY_ID: ${{ steps.s3.outputs.access-key-id }}
+          S3_TEST_SECRET: ${{ steps.s3.outputs.secret-access-key }}
+          TEST_BASH: ${{ runner.os == 'macOS' && '/bin/bash' || 'bash' }}
+        run: $TEST_BASH .github/s3-test/edge-cases.sh
+
       - name: Create files to upload
         run: |
           mkdir -p fixture/build/outputs/bundle "fixture/docs/with space"
@@ -72,6 +80,7 @@ jobs:
         with:
           name: bundle
           path: downloaded
+          sha256: ${{ steps.upload.outputs.sha256 }}
           endpoint: ${{ env.S3_TEST_ENDPOINT }}
           bucket: ci-artifacts
           access-key-id: ${{ steps.s3.outputs.access-key-id }}

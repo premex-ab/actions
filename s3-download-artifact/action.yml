@@ -14,9 +14,19 @@ inputs:
     description: "Artifact name used when uploading"
     required: true
   path:
-    description: "Directory to unpack into"
+    description: >
+      Directory to unpack into. Prefer a fresh directory over the workspace,
+      so an artifact can never overwrite checked-out files.
     required: false
     default: "."
+  sha256:
+    description: >
+      Expected SHA-256 of the archive, from the upload's sha256 output passed
+      through job outputs. Recommended: without it the download trusts the
+      checksum stored in the same bucket, which catches corruption but not
+      someone who can write to the bucket.
+    required: false
+    default: ""
   endpoint:
     description: >
       S3-compatible endpoint, scheme://host[:port], for example
@@ -70,6 +80,7 @@ runs:
       env:
         S3_NAME: ${{ inputs.name }}
         S3_DESTINATION: ${{ inputs.path }}
+        S3_EXPECTED_SHA256: ${{ inputs.sha256 }}
         S3_ENDPOINT: ${{ inputs.endpoint }}
         S3_BUCKET: ${{ inputs.bucket }}
         S3_REGION: ${{ inputs.region }}

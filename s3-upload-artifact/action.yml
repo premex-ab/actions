@@ -1,9 +1,9 @@
 ---
 name: 'S3 Upload Artifact'
 description: >
-  Uploads files as a named artifact to an S3-compatible bucket, as a checksummed
-  tar.gz. A drop-in for actions/upload-artifact when GitHub artifact storage is
-  not wanted.
+  Uploads files as a named artifact to an S3-compatible bucket, as a
+  checksummed tar.gz. An alternative to actions/upload-artifact when GitHub
+  artifact storage is not wanted.
 author: 'premex-ab'
 
 branding:
@@ -24,6 +24,13 @@ inputs:
     description: "Directory the paths are relative to"
     required: false
     default: "."
+  include-hidden-files:
+    description: >
+      Include files and directories whose name starts with '.' (such as .git,
+      which holds the checkout token). Off by default, like
+      actions/upload-artifact.
+    required: false
+    default: "false"
   if-no-files-found:
     description: "What to do when nothing matches: error, warn or ignore"
     required: false
@@ -83,6 +90,7 @@ runs:
         S3_PATH: ${{ inputs.path }}
         S3_WORKING_DIRECTORY: ${{ inputs.working-directory }}
         S3_IF_NO_FILES_FOUND: ${{ inputs.if-no-files-found }}
+        S3_INCLUDE_HIDDEN_FILES: ${{ inputs.include-hidden-files }}
         S3_ENDPOINT: ${{ inputs.endpoint }}
         S3_BUCKET: ${{ inputs.bucket }}
         S3_REGION: ${{ inputs.region }}
