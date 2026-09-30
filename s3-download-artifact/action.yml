@@ -1,0 +1,80 @@
+---
+name: 'S3 Download Artifact'
+description: >
+  Downloads an artifact stored by s3-upload-artifact, verifies its SHA-256 and
+  unpacks it.
+author: 'premex-ab'
+
+branding:
+  icon: 'download-cloud'
+  color: 'blue'
+
+inputs:
+  name:
+    description: "Artifact name used when uploading"
+    required: true
+  path:
+    description: "Directory to unpack into"
+    required: false
+    default: "."
+  endpoint:
+    description: >
+      S3-compatible endpoint, scheme://host[:port], for example
+      https://s3.example.lan:9000. Path-style addressing is used.
+    required: true
+  bucket:
+    description: "Bucket name"
+    required: true
+  region:
+    description: >
+      Signing region. Many self-hosted stores accept any value; MinIO defaults
+      to us-east-1.
+    required: false
+    default: "us-east-1"
+  access-key-id:
+    description: "Access key ID. Pass it from a secret."
+    required: true
+  secret-access-key:
+    description: "Secret access key. Pass it from a secret."
+    required: true
+  ca-certificate:
+    description: >
+      Optional PEM certificate of an internal CA that signed the endpoint TLS
+      certificate
+    required: false
+    default: ""
+  prefix:
+    description: >
+      Key prefix the artifact is stored under. The default keeps artifacts from
+      different repositories and runs apart.
+    required: false
+    default: "${{ github.repository }}/${{ github.run_id }}"
+
+outputs:
+  key:
+    description: "Object key of the downloaded archive"
+    value: ${{ steps.download.outputs.key }}
+  sha256:
+    description: "Verified SHA-256 of the downloaded archive"
+    value: ${{ steps.download.outputs.sha256 }}
+  download-path:
+    description: "Absolute path the artifact was unpacked into"
+    value: ${{ steps.download.outputs.download-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Download artifact from S3
+      id: download
+      shell: bash
+      env:
+        S3_NAME: ${{ inputs.name }}
+        S3_DESTINATION: ${{ inputs.path }}
+        S3_ENDPOINT: ${{ inputs.endpoint }}
+        S3_BUCKET: ${{ inputs.bucket }}
+        S3_REGION: ${{ inputs.region }}
+        S3_ACCESS_KEY_ID: ${{ inputs.access-key-id }}
+        S3_SECRET_ACCESS_KEY: ${{ inputs.secret-access-key }}
+        S3_CA_CERTIFICATE: ${{ inputs.ca-certificate }}
+        S3_PREFIX: ${{ inputs.prefix }}
+      run: '"${{ github.action_path }}/download.sh"'

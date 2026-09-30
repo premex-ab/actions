@@ -1,0 +1,93 @@
+---
+name: 'S3 Upload Artifact'
+description: >
+  Uploads files as a named artifact to an S3-compatible bucket, as a checksummed
+  tar.gz. A drop-in for actions/upload-artifact when GitHub artifact storage is
+  not wanted.
+author: 'premex-ab'
+
+branding:
+  icon: 'upload-cloud'
+  color: 'blue'
+
+inputs:
+  name:
+    description: "Artifact name. Letters, digits, '.', '_' and '-'."
+    required: true
+  path:
+    description: >
+      Files, directories or glob patterns (** supported), one per line, relative
+      to working-directory. Paths are kept as given, so a download recreates the
+      same layout.
+    required: true
+  working-directory:
+    description: "Directory the paths are relative to"
+    required: false
+    default: "."
+  if-no-files-found:
+    description: "What to do when nothing matches: error, warn or ignore"
+    required: false
+    default: "error"
+  endpoint:
+    description: >
+      S3-compatible endpoint, scheme://host[:port], for example
+      https://s3.example.lan:9000. Path-style addressing is used.
+    required: true
+  bucket:
+    description: "Bucket name"
+    required: true
+  region:
+    description: >
+      Signing region. Many self-hosted stores accept any value; MinIO defaults
+      to us-east-1.
+    required: false
+    default: "us-east-1"
+  access-key-id:
+    description: "Access key ID. Pass it from a secret."
+    required: true
+  secret-access-key:
+    description: "Secret access key. Pass it from a secret."
+    required: true
+  ca-certificate:
+    description: >
+      Optional PEM certificate of an internal CA that signed the endpoint TLS
+      certificate
+    required: false
+    default: ""
+  prefix:
+    description: >
+      Key prefix the artifact is stored under. The default keeps artifacts from
+      different repositories and runs apart.
+    required: false
+    default: "${{ github.repository }}/${{ github.run_id }}"
+
+outputs:
+  key:
+    description: "Object key of the uploaded archive"
+    value: ${{ steps.upload.outputs.key }}
+  sha256:
+    description: "SHA-256 of the uploaded archive"
+    value: ${{ steps.upload.outputs.sha256 }}
+  size:
+    description: "Size of the uploaded archive in bytes"
+    value: ${{ steps.upload.outputs.size }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Upload artifact to S3
+      id: upload
+      shell: bash
+      env:
+        S3_NAME: ${{ inputs.name }}
+        S3_PATH: ${{ inputs.path }}
+        S3_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        S3_IF_NO_FILES_FOUND: ${{ inputs.if-no-files-found }}
+        S3_ENDPOINT: ${{ inputs.endpoint }}
+        S3_BUCKET: ${{ inputs.bucket }}
+        S3_REGION: ${{ inputs.region }}
+        S3_ACCESS_KEY_ID: ${{ inputs.access-key-id }}
+        S3_SECRET_ACCESS_KEY: ${{ inputs.secret-access-key }}
+        S3_CA_CERTIFICATE: ${{ inputs.ca-certificate }}
+        S3_PREFIX: ${{ inputs.prefix }}
+      run: '"${{ github.action_path }}/upload.sh"'
