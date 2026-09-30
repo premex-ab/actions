@@ -1,0 +1,60 @@
+---
+name: Publish Release
+
+# Publishes a release from main without the GitHub UI, and moves the major
+# version tag. A release created with GITHUB_TOKEN does not trigger
+# release.yml, so the major tag is moved here as well.
+'on':
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, for example v1.2.0'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    name: Publish ${{ inputs.version }}
+    if: github.ref == 'refs/heads/main'
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate version
+        run: |
+          if [[ ! "$VERSION" =~ ^v([0-9]+)\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$VERSION' is not a version like v1.2.3"
+            exit 1
+          fi
+          tag="refs/tags/$VERSION"
+          if git rev-parse --verify --quiet "$tag" > /dev/null; then
+            echo "::error::$VERSION already exists"
+            exit 1
+          fi
+          echo "MAJOR=${VERSION%%.*}" >> "$GITHUB_ENV"
+
+      - name: Create the release
+        run: |
+          gh release create "$VERSION" --target "$GITHUB_SHA" \
+            --title "$VERSION" --generate-notes
+
+      - name: Move the major version tag
+        run: |
+          git fetch --tags --force
+          git tag -f "$MAJOR" "$VERSION^{commit}"
+          git push origin "refs/tags/$MAJOR" --force
+          sha="$(git rev-parse "$VERSION^{commit}")"
+          echo "$MAJOR now points to $VERSION ($sha)"

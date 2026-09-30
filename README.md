@@ -38,7 +38,9 @@ This repository uses semantic versioning with moveable major version tags:
 - **Specific versions**: Use `@v1.2.3` to pin to an exact release
 - **Major versions**: Use `@v1` to automatically get the latest v1.x.y release
 
-When a new release is created (e.g., `v1.2.3`), the release workflow automatically updates the corresponding major version tag (`v1`) to point to the new release. This allows consuming actions with major version references that automatically receive compatible updates.
+When a new release is created (e.g., `v1.2.3`), the release workflow automatically updates the corresponding major version tag (`v1`) to point to the new release.
+
+To publish a release without the GitHub UI, run the **Publish Release** workflow (`publish-release.yml`) on `main` with the new version. It creates the release with generated notes and moves the major version tag itself. This allows consuming actions with major version references that automatically receive compatible updates.
 
 ### Example Usage
 
