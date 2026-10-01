@@ -31,6 +31,13 @@ inputs:
       actions/upload-artifact.
     required: false
     default: "false"
+  immutable:
+    description: >
+      Refuse to replace an existing object (If-None-Match: *), so a retry can
+      never overwrite an earlier upload. Use a prefix that includes
+      github.run_attempt.
+    required: false
+    default: "false"
   if-no-files-found:
     description: "What to do when nothing matches: error, warn or ignore"
     required: false
@@ -91,6 +98,7 @@ runs:
         S3_WORKING_DIRECTORY: ${{ inputs.working-directory }}
         S3_IF_NO_FILES_FOUND: ${{ inputs.if-no-files-found }}
         S3_INCLUDE_HIDDEN_FILES: ${{ inputs.include-hidden-files }}
+        S3_IMMUTABLE: ${{ inputs.immutable }}
         S3_ENDPOINT: ${{ inputs.endpoint }}
         S3_BUCKET: ${{ inputs.bucket }}
         S3_REGION: ${{ inputs.region }}

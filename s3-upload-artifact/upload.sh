@@ -8,6 +8,7 @@ s3_check_name "$S3_NAME"
 s3_check_prefix "$S3_PREFIX"
 case "$S3_IF_NO_FILES_FOUND" in warn|error|ignore) ;; *) s3_fail "if-no-files-found must be warn, error or ignore";; esac
 case "${S3_INCLUDE_HIDDEN_FILES:-false}" in true|false) ;; *) s3_fail "include-hidden-files must be true or false";; esac
+case "${S3_IMMUTABLE:-false}" in true|false) ;; *) s3_fail "immutable must be true or false";; esac
 
 directory="${S3_WORKING_DIRECTORY:-.}"
 [[ -d "$directory" ]] || s3_fail "working-directory '$directory' does not exist"
@@ -78,8 +79,12 @@ size="$(wc -c < "$archive" | tr -d ' ')"
 count="$(tr -cd '\0' < "$list" | wc -c | tr -d ' ')"
 key="$S3_PREFIX/$S3_NAME.tar.gz"
 
-s3_put "$archive" "$key"
-s3_put "$archive.sha256" "$key.sha256"
+# immutable: the store refuses to replace an existing object (412), so a retry can never
+# overwrite what an earlier attempt uploaded. Put the run attempt in the prefix.
+put_args=()
+[[ "${S3_IMMUTABLE:-false}" == true ]] && put_args=(-H 'If-None-Match: *')
+s3_put "$archive" "$key" ${put_args[@]+"${put_args[@]}"}
+s3_put "$archive.sha256" "$key.sha256" ${put_args[@]+"${put_args[@]}"}
 
 echo "Uploaded $count files ($size bytes) to s3://$S3_BUCKET/$key (sha256 $digest)"
 {

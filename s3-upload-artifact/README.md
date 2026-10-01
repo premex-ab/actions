@@ -25,7 +25,7 @@ Linux. Windows runners are not supported.
 - **The default prefix** is `<owner>/<repo>/<run id>`.
   - Jobs of the same workflow run share it, which is what handing a file from a build job to a
     publish job needs.
-  - Re-running a job overwrites its artifact.
+  - Re-running a job overwrites its artifact, unless the upload is `immutable`.
   - Two jobs that upload the same name at the same time (a matrix, say) overwrite each other. Give
     each its own name.
 
@@ -49,12 +49,16 @@ jobs:
     runs-on: tart
     outputs:
       bundle-sha256: ${{ steps.bundle.outputs.sha256 }}
+      bundle-attempt: ${{ github.run_attempt }}
     steps:
       # ... build app-release.aab ...
       - id: bundle
         uses: premex-ab/actions/s3-upload-artifact@v1
         with:
           name: tandayo-play-${{ inputs.version_code }}
+          # One prefix per attempt, immutable objects: retries never mix outputs.
+          prefix: play-internal/${{ github.run_id }}/${{ github.run_attempt }}
+          immutable: true
           path: |
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/bundle/release/*.sha256
@@ -72,6 +76,7 @@ jobs:
         with:
           name: tandayo-play-${{ inputs.version_code }}
           path: release-artifact
+          prefix: play-internal/${{ github.run_id }}/${{ needs.build.outputs.bundle-attempt }}
           sha256: ${{ needs.build.outputs.bundle-sha256 }}
           endpoint: ${{ vars.ARTIFACT_S3_ENDPOINT }}
           bucket: ${{ vars.ARTIFACT_S3_BUCKET }}
@@ -102,6 +107,7 @@ Upload only:
 | `path` | | Files, directories or globs, one per line, relative to `working-directory`. Directories are included recursively. `**` needs bash 4 or later; with Apple's bash 3.2 the upload fails and says so. `!` exclusions are not supported. |
 | `working-directory` | `.` | Directory the paths are relative to |
 | `include-hidden-files` | `false` | Include files and directories whose name starts with `.` |
+| `immutable` | `false` | Upload with `If-None-Match: *`, so the store refuses to replace an existing object and a retry can never overwrite an earlier upload. Put `github.run_attempt` in the prefix. |
 | `if-no-files-found` | `error` | `error`, `warn` or `ignore` |
 
 Download only:
